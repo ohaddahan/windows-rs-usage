@@ -20,6 +20,7 @@ fn main() -> () {
 
     unsafe {
         let wm_html_getobject = RegisterWindowMessageW(w!("wm_html_getobject"));
+        let guid_html_document = GUID::from_u128(0x626FC520_A41E_11CF_A731_00A0C9082637);
         let h = GetDesktopWindow();
         let handles: Vec<isize> =  enum_windows(h).into_iter().filter(|h|  {
             let mut pid = 0;
@@ -29,8 +30,7 @@ fn main() -> () {
         }).collect::<Vec<isize>>();
 
         for handle in handles.iter() {
-            let response: *mut usize = &mut 0usize;
-            println!("handle = {:?}", handle);
+            let mut response: *mut usize = &mut 0usize;
             let ret = SendMessageTimeoutW(
                 HWND(*handle),
                 wm_html_getobject,
@@ -41,12 +41,11 @@ fn main() -> () {
                 Option::from(response),
             );
             let error = GetLastError();
-            println!("error = {:?}", error);
-            println!("ret = {:?}", ret);
-            println!("response = {:?}", response);
+            println!("handle = {:?} | error = {:?} | ret = {:?} | response = {:?}",handle, error, ret, response);
+            if ret.0 == 0 {
+                continue;
+            }
 
-            let guid_html_document = GUID::from_u128(0x626FC520_A41E_11CF_A731_00A0C9082637);
-            println!("guid_html_document = {:?}", guid_html_document);
             // let mut doc = ptr::null_mut();
             // let mut doc = ptr::null::<usize>() as *mut usize as *mut c_void;
             let mut doc: *mut c_void = ptr::null_mut();
@@ -57,8 +56,7 @@ fn main() -> () {
                 &mut doc,
             );
             let error = GetLastError();
-            println!("error = {:?}", error);
-            println!("result = {:?}", result);
+            println!("handle = {:?} | error = {:?} | result = {:?}",handle, error, result);
         }
     }
 }
