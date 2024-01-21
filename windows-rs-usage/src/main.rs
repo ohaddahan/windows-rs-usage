@@ -8,6 +8,7 @@ use std::{ptr, thread};
 use windows::core::imp::{ConstBuffer, GetLastError};
 use windows::core::{s, w, GUID, HSTRING, PCSTR};
 use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
+use windows::Win32::System::Com::CoInitialize;
 use windows::Win32::UI::Accessibility::ObjectFromLresult;
 use windows::Win32::UI::WindowsAndMessaging::{
     GetClassNameA, GetClassNameW, GetDesktopWindow, GetParent, GetWindowThreadProcessId,
@@ -19,6 +20,7 @@ fn main() -> () {
     let timeout = 5_000;
 
     unsafe {
+        CoInitialize(None).unwrap();
         let wm_html_getobject = RegisterWindowMessageW(w!("wm_html_getobject"));
         let guid_html_document = GUID::from_u128(0x626FC520_A41E_11CF_A731_00A0C9082637);
         let h = GetDesktopWindow();
@@ -41,22 +43,24 @@ fn main() -> () {
                 Option::from(response),
             );
             let error = GetLastError();
-            println!("handle = {:?} | error = {:?} | ret = {:?} | response = {:?}",handle, error, ret, response);
+            println!("handle = {:?} | error = {:?} | ret = {:?} | response = {:?}| *response = {:?}",handle, error, ret, response, *response);
             if ret.0 == 0 {
                 continue;
             }
 
             // let mut doc = ptr::null_mut();
             // let mut doc = ptr::null::<usize>() as *mut usize as *mut c_void;
-            let mut doc: *mut c_void = ptr::null_mut();
+            // let mut doc: *mut c_void = ptr::null_mut();
+            let mut _doc: *mut c_void = ptr::null_mut();
+            let mut doc = addr_of_mut!(_doc);
             let result = ObjectFromLresult(
-                LRESULT(response as isize),
+                LRESULT(*response as isize),
                 &guid_html_document,
                 WPARAM::default(),
-                &mut doc,
+                doc,
             );
             let error = GetLastError();
-            println!("handle = {:?} | error = {:?} | result = {:?}",handle, error, result);
+            println!("handle = {:?} | error = {:?} | result = {:?} | doc = {:?}",handle, error, result, doc);
         }
     }
 }
